@@ -4,13 +4,14 @@ extension TextEditView {
     struct Parameters {
         var isMultiline: Bool = false
         var isNumeric: Bool = false
+        var isPhone: Bool = false
 
         var height: Double {
             isMultiline ? 100 : 32
         }
 
         var keyboard: UIKeyboardType {
-            isNumeric ? .numberPad : .default
+            isPhone ? .phonePad : (isNumeric ? .numberPad : .default)
         }
     }
 }

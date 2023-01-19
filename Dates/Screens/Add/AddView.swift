@@ -6,7 +6,7 @@ struct AddView: View {
     @State private var name: String = ""
     @State private var phone: String = ""
     @State private var age: String = "18"
-    @State private var selectedPhotos: [PhotoSelection] = .init(repeating: .placeholder, count: 10)
+    @State private var selectedPhotos: [PhotoSelection] = []
     @State private var meetingDate: Date = Date()
     @State private var notes: String = ""
 
@@ -28,8 +28,6 @@ struct AddView: View {
                         photoView()
                         notesView()
                         Spacer()
-//                        linkView()
-//                        Spacer()
                         buttonView()
                         Spacer()
                     }.padding()
@@ -60,7 +58,7 @@ struct AddView: View {
         name = ""
         age = "18"
         phone = ""
-        selectedPhotos = .init(repeating: .placeholder, count: 10)
+        selectedPhotos = []
         meetingDate = Date()
         notes = ""
         instagram = ""
@@ -74,7 +72,7 @@ struct AddView: View {
             switch $0 {
             case .selected(let image):
                 return image
-            case .placeholder:
+            default:
                 return nil
             }
         }
@@ -109,7 +107,7 @@ struct AddView: View {
     @ViewBuilder
     private func infoView() -> some View {
         HStack {
-            TextEditView(parameters: .init(isNumeric: true), title: "Phone", text: $phone)
+            TextEditView(parameters: .init(isPhone: true), title: "Phone", text: $phone)
             TextEditView(parameters: .init(isNumeric: true), title: "Age", text: $age)
             DateEditView(title: "Meeting date", date: $meetingDate)
         }
@@ -117,9 +115,11 @@ struct AddView: View {
 
     @ViewBuilder
     private func photoView() -> some View {
+        let canAddMore = selectedPhotos.count < 10
+        let displayedPhotos = canAddMore ? selectedPhotos + [.placeholder] : selectedPhotos
         ScrollView([.horizontal]) {
             HStack {
-                ForEach(selectedPhotos, id: \.self) { selection in
+                ForEach(displayedPhotos, id: \.self) { selection in
                     selection.image
                         .resizable()
                         .scaledToFit()
@@ -192,7 +192,11 @@ struct AddView: View {
             .frame(minHeight: 32, maxHeight: 48)
             Button(
                 action: {
-                    viewModel.update(update: .add(makePersonFromCurrentState()))
+                    if viewModel.onEditing == nil {
+                        viewModel.update(update: .add(makePersonFromCurrentState()))
+                    } else {
+                        viewModel.update(update: .finishEditing(makePersonFromCurrentState()))
+                    }
                     reset()
                 },
                 label: {

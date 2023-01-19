@@ -3,14 +3,8 @@ import SwiftUI
 struct ItemDetail: View {
     @EnvironmentObject var viewModel: ViewModel
 
-    @Binding var isPresented: Bool
-
-    let person: Person
-
-    init(isPresented: Binding<Bool>, person: Person) {
-        self._isPresented = isPresented
-        self.person = person
-    }
+    @State var shouldShowLikeAlert = false
+    @Binding var person: Person?
 
     var body: some View {
         ScrollView {
@@ -51,7 +45,7 @@ struct ItemDetail: View {
     @ViewBuilder
     private var bottomView: some View {
         VStack(spacing: 17) {
-            person.photoPreview.image
+            person?.photoPreview.image
                 .resizable()
                 .scaledToFill()
                 .frame(width: 172, height: 172)
@@ -61,21 +55,21 @@ struct ItemDetail: View {
                         .stroke(Color.white, lineWidth: 6)
                 )
 
-            Text(person.name)
+            Text(person?.name ?? "")
                 .font(.system(size: 26))
                 .fontWeight(.semibold)
                 .foregroundColor(.black)
             HStack {
                 Spacer()
-                info(left: "Phone", right: person.phone)
+                info(left: "Phone", right: person?.phone ?? "")
                 Spacer()
-                info(left: "Age", right: person.age.description)
+                info(left: "Age", right: person?.age.description ?? "")
                 Spacer()
-                info(left: "Meeting date", right: person.meetingDate.dateString)
+                info(left: "Meeting date", right: person?.meetingDate.dateString ?? "")
                 Spacer()
             }
             buttonsPanel
-            Text(person.notes)
+            Text(person?.notes ?? "")
                 .fontWeight(.semibold)
                 .frame(maxWidth: .infinity,alignment: .leading)
                 .font(.system(size: 14))
@@ -89,10 +83,10 @@ struct ItemDetail: View {
 
     @ViewBuilder
     private var gallery: some View {
-        if !person.photos.isEmpty {
+        if person?.photos.isEmpty != nil {
             ScrollView(.horizontal, showsIndicators: true) {
                 LazyHStack(spacing: 15) {
-                    ForEach(person.photos, id: \.self) { photo in
+                    ForEach(person?.photos ?? [], id: \.self) { photo in
                         Rectangle()
                             .aspectRatio(10/9, contentMode: .fit)
                             .frame(width: (UIScreen.main.bounds.width / 2) - 24)
@@ -117,47 +111,39 @@ struct ItemDetail: View {
             Spacer(minLength: 36)
             Button(
                 action: {
-                    viewModel.update(update: .like(person))
+                    guard let person else { return }
+                    if person.isLiked == true {
+                        viewModel.update(update: .dislike(person))
+                    } else {
+                        viewModel.update(update: .like(person))
+                    }
+                    self.person?.isLiked.toggle()
+                    shouldShowLikeAlert = true
                 }, label: {
                     RoundedRectangle(cornerRadius: 10)
                         .foregroundColor(.init(hex: "#F038D4"))
                         .frame(width: 150, height: 39)
                         .overlay(
                             HStack {
-                                Text("Like Meeting")
+                                Text(person?.isLiked == true ? "Dislike" : "Like")
                                     .font(.system(size: 12))
                                     .fontWeight(.semibold)
                                     .foregroundColor(.white)
-                                Image("like")
+                                Image(person?.isLiked == true ? "dislike" : "like")
                                     .resizable()
                                     .scaledToFit()
                                     .padding(.vertical, 10)
                             }
                         )
                 })
-            .disabled(person.isLiked)
-            .brightness(person.isLiked ? -0.2 : 0)
+            .alert(isPresented: $shouldShowLikeAlert) {
+                Alert(title: Text(person?.isLiked == true ? "Meeting added to favorites." : "Meeting removed from favorites."))
+            }
             Spacer()
             Button(
                 action: {
-                    viewModel.update(update: .dislike(person))
-                }, label: {
-                    RoundedRectangle(cornerRadius: 10)
-                        .foregroundColor(.init(hex: "#0A74F7"))
-                        .frame(width: 39, height: 39)
-                        .overlay(
-                            Image("dislike")
-                                .resizable()
-                                .scaledToFit()
-                                .padding(9)
-                        )
-                })
-            .disabled(!person.isLiked)
-            .brightness(person.isLiked ? 0 : -0.2)
-            Spacer()
-            Button(
-                action: {
-                    isPresented = false
+                    guard let person else { return }
+                    self.person = nil
                     viewModel.update(update: .edit(person))
                 }, label: {
                     RoundedRectangle(cornerRadius: 10)
@@ -203,21 +189,23 @@ struct ItemDetail: View {
 
     @ViewBuilder
     private var imageTop: some View {
-        switch person.photos.first ?? .placeholder {
-        case .placeholder:
-            EmptyView()
+        switch person?.photos.first ?? .placeholder {
         case .selected(let image):
             Image(uiImage: image)
                 .resizable()
                 .scaledToFill()
+        default:
+            EmptyView()
         }
     }
 
     private var buttonRemind: some View {
         Button(
-            action: { viewModel.update(update: person.isRemind ? .removeReminder(person) : .addReminder(person)) },
+            action: {
+                guard let person else { return }
+                viewModel.update(update: person.isRemind ? .removeReminder(person) : .addReminder(person)) },
             label: {
-                Image(person.isRemind ? "remind" : "notRemind")
+                Image(person?.isRemind == true ? "remind" : "notRemind")
                     .resizable()
                     .scaledToFit()
 
@@ -227,7 +215,7 @@ struct ItemDetail: View {
 
 struct ItemDetail_Previews: PreviewProvider {
     static var previews: some View {
-        ItemDetail(isPresented: .constant(true), person: MockStorage.persons[0])
+        ItemDetail(person: .constant(MockStorage.persons[0]))
             .environmentObject(ViewModel.shared)
     }
 }

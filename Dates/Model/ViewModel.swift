@@ -29,24 +29,25 @@ final class ViewModel: ObservableObject {
     private var cancellables: Set<AnyCancellable> = []
 
     private init() {
-        persons = (UserDefaults.standard.value(forKey: "persons") as? Data).flatMap { try? JSONDecoder().decode([Person].self, from: $0) } ?? MockStorage.persons
+        persons = (UserDefaults.standard.value(forKey: "persons") as? Data).flatMap { try? JSONDecoder().decode([Person].self, from: $0) } ?? []
         isPhotoAccessGranted = UserDefaults.standard.bool(forKey: "isPhotoAccessGranted")
         isEventAccessGranted = UserDefaults.standard.bool(forKey: "isEventAccessGranted")
         handleUpdate()
 
-        $currentTabBar.sink { tab in
-            if let person = self.onEditing, tab != .create {
-                self.update(update: .delete(person))
-                self.update(update: .add(person))
-                self.onEditing = nil
-            }
-        }.store(in: &cancellables)
+//        $currentTabBar.sink { tab in
+//            if let person = self.onEditing, tab != .create {
+//                self.onEditing = nil
+//                self.update(update: .delete(person))
+////                self.update(update: .add(person))
+//            }
+//        }.store(in: &cancellables)
     }
 
     func update(update: Update) {
         switch update {
         case .add(let person):
             persons.append(person)
+            currentTabBar = .home
         case .delete(let person):
             if let index = persons.firstIndex(where: { $0.id == person.id }) {
                 persons.remove(at: index)
@@ -56,6 +57,10 @@ final class ViewModel: ObservableObject {
                 onEditing = persons[index]
                 currentTabBar = .create
             }
+        case .finishEditing(let person):
+            onEditing = nil
+            self.update(update: .delete(person))
+            self.update(update: .add(person))
         case .like(let person):
             if let index = persons.firstIndex(where: { $0.id == person.id }) {
                 persons[index].isLiked = true

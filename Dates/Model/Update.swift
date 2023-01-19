@@ -4,6 +4,7 @@ enum Update {
     case add(Person)
     case delete(Person)
     case edit(Person)
+    case finishEditing(Person)
     case like(Person)
     case dislike(Person)
     case setTabBar(hidden: Bool)

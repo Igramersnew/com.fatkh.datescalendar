@@ -2,6 +2,9 @@ import SwiftUI
 
 struct FavoritesView: View {
     @EnvironmentObject var viewModel: ViewModel
+
+    @State private var presentedDetails = false
+    @State private var presentedPerson: Person?
     
     var body: some View {
         NavigationView {
@@ -24,6 +27,9 @@ struct FavoritesView: View {
                                 .fill(Color.gray)
                                 .frame(maxWidth: .infinity)
                                 .frame(height: 1)
+                        }.onTapGesture {
+                                presentedPerson = person
+                                presentedDetails = true
                         }
                     }
                 }
@@ -34,6 +40,9 @@ struct FavoritesView: View {
             }
             .navigationTitle("Favorites")
             .background(Color.white)
+            .sheet(item: $presentedPerson) { _ in
+                ItemDetail(person: $presentedPerson)
+            }
         }
     }
 }

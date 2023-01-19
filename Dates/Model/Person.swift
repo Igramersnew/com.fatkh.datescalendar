@@ -19,14 +19,10 @@ struct Person: Codable, Hashable, Identifiable {
     var isRemind: Bool = false
 
     var photoPreview: PhotoSelection {
-        return photoPreviewUrl.flatMap { url in ImageStorage.read(from: url).map { .selected($0) } } ?? .placeholder
+        return photoPreviewUrl.flatMap { url in ImageStorage.read(from: url).map { .selected($0) } } ?? .noPhoto
     }
 
     var photos: [PhotoSelection] {
         return photoUrls.map { url in ImageStorage.read(from: url).map { .selected($0) } ?? .placeholder }
-    }
-
-    var yearsOld: String {
-        return "12" // TODO: calculate age
     }
 }

@@ -33,8 +33,8 @@ struct HomeView: View {
             }
             .background(Color.white)
             .onAppear { presentedPerson = nil }
-            .sheet(item: $presentedPerson) {
-                ItemDetail(isPresented: $presentedDetails, person: $0)
+            .sheet(item: $presentedPerson) { _ in
+                ItemDetail(person: $presentedPerson)
             }
         }
     }
